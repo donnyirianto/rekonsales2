@@ -1,0 +1,6 @@
+Flowchart Collect Cek NP Toko
+1. Program melakukan pengecekan data master toko aktif
+2. Hasil Data Listing File dikelompokkan sesuai dengan kode gudang
+3. Proses pengecekan data NP toko dengan tanggal H-4 pada table dc_npbtoko_log,dc_npbtoko_file dan mstran toko 
+4. Data hasil pengecekan kemudian didokumentasikan kedalam database
+5. Proses Delay 120 Menit untuk kemudian mengulang proses point 1
