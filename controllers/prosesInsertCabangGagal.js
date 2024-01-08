@@ -34,7 +34,6 @@ export const prosesInsertCabangGagal = async (logger,client,queryAnyDb) => {
         const dataCache = await Promise.allSettled(getPrepareData);
 
         let dataResult = dataCache.filter(r => r.status === 'fulfilled').map(r => r.value);
-        const dataResultGagal = dataResult.filter(r => r.status != 'Sukses')
             dataResult = dataResult.filter(r => r.status === 'Sukses')
         const prep = dataResult.filter(r => r.status === 'Sukses').map(r => r.data)
         
