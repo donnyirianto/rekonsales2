@@ -1,29 +1,49 @@
-var cron = require('node-cron');
-const Controller = require('./controller/controller')
-var dayjs = require("dayjs"); 
-var taskRunning = true;
+import { logger } from './config/logger.js';
+import { prosesRekon } from './controllers/prosesRekon.js';
+import { prosesInsertCabang } from './controllers/prosesInsertCabang.js';
+import { client } from './services/redis.js';
+import { query } from './services/db.js';
+import dayjs from 'dayjs';
+import * as cron from 'node-cron';
 
-console.log("EDP REG IV - Cek Data Mtran & Mstran Toko");
-cron.schedule('*/1 * * * *', async() => { 
-//(async () =>{ 
-    try {      
-        var now = new Date(); 
+let taskLoad = true
+
+const unexpectedErrorHandler = (error) => {
+    logger.error(error);
+    client.disconnect()
+    logger.info('Service Stopped');
+    process.exit(1); 
+};
+  
+process.on('uncaughtException', unexpectedErrorHandler);
+process.on('unhandledRejection', unexpectedErrorHandler);
+
+process.on('SIGTERM', () => {
+    logger.info('SIGTERM received');
+});
+
+// Service Cron-job : Proses setiap 10 Detik
+logger.info(`Service Proses Logs - Running`);
+
+cron.schedule('*/1 * * * * *', async() => { 
+     try {
+        if (!taskLoad) {
+            return;
+        } 
+        taskLoad = false
         
-        console.log(`[START] Service Running (${dayjs().format("YYYY-MM-DD HH:mm:ss")}`)
-        if(taskRunning){
-            taskRunning = false                     
-            console.log("Pengecekan Mtran Toko: " + dayjs().format("YYYY-MM-DD HH:mm:ss"))     
-            const kodecabang = "G004,G025,G030,G034,G244,G146,G148,G149,G158,G174,G301,G305,G177,G224,G232,G234,G236,G237"
-            await Controller.runningAll(kodecabang);
-            taskRunning = true
-        } else{
-            taskRunning = true
-            console.log("Task On Delay: " + dayjs().format("YYYY-MM-DD HH:mm:ss") )	
-        }  
-                
-    } catch (err) {
-    
-        taskRunning = true
-        console.log(err);
+        logger.info(`[START] Proses Rekon Sales:  ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`) 
+        
+        await prosesRekon(logger,client,query);
+        
+        await prosesInsertCabang(logger,client);
+
+        logger.info(`[FINISH] Proses  Rekon Sales:  ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`) 
+
+        taskLoad = true
+
+    } catch (error) {
+        logger.error(error);
+        taskLoad =true
     } 
 });

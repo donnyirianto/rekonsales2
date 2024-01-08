@@ -1,18 +1,31 @@
 {
   "name": "rekonsales",
   "version": "1.0.0",
-  "description": "",
-  "main": "coba.js",
+  "description": "rekon sales dt vs mtran toko",
+  "main": "server.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/donnyirianto/rekonsales.git"
+  },
+  "author": "RND - EDP REG IV",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/donnyirianto/rekonsales/issues"
+  },
+  "homepage": "https://github.com/donnyirianto/rekonsales#readme",
   "dependencies": {
-    "dayjs": "^1.11.1",
-    "dotenv": "^16.0.0",
-    "mysql2": "^2.3.3",
-    "node-cron": "^3.0.0"
+    "axios": "^1.6.5",
+    "dayjs": "^1.11.10",
+    "dotenv": "^16.3.1",
+    "joi": "^17.11.0",
+    "nanoid": "^5.0.4",
+    "node-cron": "^3.0.3",
+    "redis": "^4.6.12",
+    "winston": "^3.11.0"
   }
 }
