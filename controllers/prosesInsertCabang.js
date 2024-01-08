@@ -53,9 +53,9 @@ export const prosesInsertCabang = async (logger,client) => {
         for(let i of listKeySukses){
             await client.del(i)
         }
-        logger.info(`Total Sukses Insert DB Cabang: ${dataResult.length}`)
-        logger.info(`Total Gagal Insert DB Cabang: ${dataResultGagal.length}`)
-        logger.info(`Proses Insert Selesai`)
+        logger.info(`___ Total Sukses Insert DB Cabang: ${dataResult.length}`)
+        logger.info(`___ Total Gagal Insert DB Cabang: ${dataResultGagal.length}`)
+        logger.info(`Proses Insert DB Cabang Selesai`)
         return
 
     }catch(e){

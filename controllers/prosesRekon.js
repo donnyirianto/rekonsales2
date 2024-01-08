@@ -36,6 +36,11 @@ const prepareData = async (logger,client,r) => {
             tanggal1: r.tanggal1,
             tanggal2: r.tanggal2,
             api_server: r.api_server,
+            host: r.host,
+            user: r.user,
+            pass: r.pass,
+            db: r.db,
+            port: r.port,
             data: dataToko
         }
         await client.set(`rekonsales-insert-${r.kdtk}`,JSON.stringify(dataCache))
@@ -54,14 +59,19 @@ const prepareData = async (logger,client,r) => {
 export const prosesRekon = async (logger,client,query) => {
     try{
          
-        const allPending = await getListIpToko(query,config.proses);
-        
+        const allPending = await getListIpToko(query,config.proses); 
+
         //Return jika tidak ada data pending
         if (allPending.length === 0) return 
-        
-        logger.info(`Proses Get Data Toko: ${allPending.length} Data`)
 
-        const dataPending = allPending.slice(0,config.proses)
+        const belumAct = allPending.filter(r => r.ket === "BELUM" || r.ket === "belum" || r.ket == "")
+        const gagalAct = allPending.filter(r => r.ket === "GAGAL")
+        const allPendingAct = belumAct.length >= gagalAct.length ? belumAct : gagalAct
+
+        logger.info(`Total Pending proses: ${allPendingAct.length} Data`)
+
+        const dataPending = allPendingAct.slice(0,config.proses)
+        logger.info(`Proses Get Data Toko: ${dataPending.length} Data`)
         const getPrepareData = dataPending.map(r => prepareData(logger,client,r));
         const dataCache = await Promise.allSettled(getPrepareData);
 
@@ -80,8 +90,8 @@ export const prosesRekon = async (logger,client,query) => {
             await updateGagal(query,queryUpdateGagal)
         }
 
-        logger.info(`Total Sukses Get Data Toko: ${dataResult.length}`)
-        logger.info(`Total Gagal Get Data Toko: ${dataResultGagal.length}`)
+        logger.info(`___ Total Sukses Get Data Toko: ${dataResult.length}`)
+        logger.info(`___ Total Gagal Get Data Toko: ${dataResultGagal.length}`)
         logger.info(`Proses Get Data Selesai`)
         return 
 
