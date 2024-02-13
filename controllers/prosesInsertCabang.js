@@ -10,19 +10,21 @@ const prepareData = async (client,r) => {
         const insert = dataCache.data.map((r)=> `('${r.kdcab}','${r.toko}','${r.nama_toko.substring(0,20)}','${r.SHOP}','${r.WDATE}','${r.TJUALN}','${r.TRETN}','${r.TPPN}','${r.THPP}','${r.TJUAL}','${r.TRET}','${r.JQTY}','${r.DQTY}','${r.BBS_PPN}')`)
         
         const queryInsert = `REPLACE INTO m_rekonsales values ${insert.join(",")};`
+        
         const req = await axios.post(`${dataCache.api_server}/proses/multi_query`, {kdcab:dataCache.kdcab,sintak: queryInsert}, {
             headers: {
                 Authorization: "eDpmERDEKA_sel4lu"
             },
             timeout: 25000
         })
+        
+        
         if(req.status != 200) throw new Error("Error Insert Data");
         return {
             status: "Sukses",
             key: r
         };
     } catch (error) {
-        
         return { status: "Gagal" };
     }
   };
