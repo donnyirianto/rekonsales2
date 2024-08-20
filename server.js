@@ -28,7 +28,7 @@ process.on('SIGTERM', () => {
 // Service Cron-job : Proses setiap 10 Detik
 logger.info(`Service Proses Logs - Running`);
 
-cron.schedule('*/5 * * * * *', async() => { 
+cron.schedule('*/2 * * * *', async() => { 
      try {
         if (!taskLoad) {
             return;
