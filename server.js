@@ -39,7 +39,7 @@ cron.schedule('*/5 * * * * *', async() => {
         
         await prosesRekon(logger,client,query);
         
-        await prosesInsertCabang(logger,client);
+        //await prosesInsertCabang(logger,client,query);
 
         logger.info(`[FINISH] Proses  Rekon Sales:  ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`) 
 
@@ -51,23 +51,23 @@ cron.schedule('*/5 * * * * *', async() => {
     } 
 });
 
-cron.schedule('*/10 * * * *', async() => { 
-    try {
-       if (!taskLoadSapu) {
-           return;
-       } 
-       taskLoadSapu = false
+// cron.schedule('*/10 * * * *', async() => { 
+//     try {
+//        if (!taskLoadSapu) {
+//            return;
+//        } 
+//        taskLoadSapu = false
        
-       logger.info(`[START] Proses Rekon Sales - Gagal Insert Api:  ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`) 
+//        logger.info(`[START] Proses Rekon Sales - Gagal Insert Api:  ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`) 
        
-       await prosesInsertCabangGagal(logger,client,queryAnyDb); 
+//        await prosesInsertCabangGagal(logger,client,queryAnyDb); 
        
-       logger.info(`[FINISH] Proses  Rekon Sales - Gagal Insert Api:  ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`) 
+//        logger.info(`[FINISH] Proses  Rekon Sales - Gagal Insert Api:  ${dayjs().format("YYYY-MM-DD HH:mm:ss")}`) 
 
-       taskLoadSapu = true
+//        taskLoadSapu = true
 
-   } catch (error) {
-       logger.error(error);
-       taskLoadSapu =true
-   } 
-});
+//    } catch (error) {
+//        logger.error(error);
+//        taskLoadSapu =true
+//    } 
+// });

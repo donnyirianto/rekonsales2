@@ -2,13 +2,14 @@ import mysql from 'mysql2/promise';
 
 export const queryAnyDb = async (host,user,password,database,port, queryx) => {
   try {
-      
-      const dbnya = { /* don't expose password or any sensitive info, done only for demo */
+    
+      const dbnya = {
           host: host,
           user: user,
           password: password,
           database: database,
-          port: port,
+          port: port, 
+          idleTimeout: 60000,
           dateStrings:true,
           multipleStatements: true
       }
@@ -20,6 +21,7 @@ export const queryAnyDb = async (host,user,password,database,port, queryx) => {
       return "Sukses"
     
   } catch (error) {
+    
     return "Error"
   }
 }

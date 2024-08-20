@@ -1,10 +1,67 @@
 import { getListIpToko, updateGagal, updatePending } from "../models/model.js";
-import { readRespSql } from "../helpers/readresp.js";
+import { readRespSql, LoginESS } from "../helpers/readresp.js";
 import { config } from "../config/config.js";
+import { prosesInsertCabang } from './prosesInsertCabang.js';
 
-const prepareData = async (logger,client,r) => {
+const requestTask = async (token,dataPayload)=>{
     try {
-        const querySQL = `SELECT b.kirim as kdcab, b.toko, b.nama as nama_toko,
+        
+        const respTask = await instance.post("http://172.24.52.14:7321/ReportFromListener/v1/CekStore", dataPayload, {
+            headers: {
+                "Token": `${token}`
+            },
+            timeout: 60000
+        })  
+        
+        if( respTask.data.code =="200"){
+            let readResponse = JSON.parse(respTask.data.data)
+
+            for( let r of readResponse){
+                const dataCache = {
+                    kdcab: r.kdcab,
+                    kdtk: r.kdtk,
+                    tanggal1: r.tanggal1,
+                    tanggal2: r.tanggal2,
+                    api_server: r.api_server,
+                    host: r.host,
+                    user: r.user,
+                    pass: r.pass,
+                    db: r.db,
+                    port: r.port,
+                    data: dataToko
+                }
+                await client.set(`rekonsales-insert-${r.kdtk}`,JSON.stringify(dataCache))
+            }
+
+            return {
+                status: "OK",
+                msg : JSON.stringify(respTask.data.msg)
+            }
+        }
+        return {            
+            status: "NOK",
+            msg : JSON.stringify(respTask.data)
+        }
+ 
+
+    } catch (e) {       
+        console.log(e.errno)  
+        return {
+            status: "ERROR", 
+            msg : `${e.code}: ${e.errno}`
+        }
+    }
+}
+
+const prepareData = async (r) => {
+    try {
+        const querySQL = `SELECT 
+                '${r.host}' as ip_server,
+                '${r.db}' as db,
+                '${r.user}' as user,
+                '${r.pass}' as pass,
+                '${r.port}' as port,
+                b.kirim as kdcab, b.toko, b.nama as nama_toko,
                 SHOP,
                 cast(TANGGAL as char) AS WDATE,
                 SUM(IF(RTYPE='J',GROSS,0)) AS TJUALN,
@@ -25,44 +82,39 @@ const prepareData = async (logger,client,r) => {
                 AND tanggal BETWEEN '${r.tanggal1}' AND '${r.tanggal2}'
                 GROUP BY TANGGAL
                 `;
-                
-        const dataToko = await readRespSql("SQL",r.kdcab,r.kdtk,querySQL,25000)
-        
-        if(dataToko.code == 400) throw new Error("Gagal Akses Toko")
-
-        const dataCache = {
-            kdcab: r.kdcab,
-            kdtk: r.kdtk,
-            tanggal1: r.tanggal1,
-            tanggal2: r.tanggal2,
-            api_server: r.api_server,
-            host: r.host,
-            user: r.user,
-            pass: r.pass,
-            db: r.db,
-            port: r.port,
-            data: dataToko
-        }
-        await client.set(`rekonsales-insert-${r.kdtk}`,JSON.stringify(dataCache))
+        const dataPayload = {
+                kdcab: r.kdcab,
+                toko: r.kdtk,
+                task:"SQL",
+                idtask:`rekonsales-${r.kdtk}`,
+                station:"01",
+                command: querySQL
+            }
+            
         return {
             status: "Sukses",
-            kdtk: r.kdtk
+            data: dataPayload
         };
     } catch (error) {
+        
         return { 
             status: "Gagal",
-            kdtk: r.kdtk
+            data: r.kdtk
         };
     }
-  };
+};
 
 export const prosesRekon = async (logger,client,query) => {
     try{
          
-        const allPending = await getListIpToko(query,config.proses); 
+        const allPending = await getListIpToko(query); 
 
         //Return jika tidak ada data pending
         if (allPending.length === 0) return 
+
+        const dataLogin = await LoginESS()
+        
+        if(dataLogin.code != 200) throw new Error(dataLogin)
 
         const belumAct = allPending.filter(r => r.ket === "BELUM" || r.ket === "belum" || r.ket == "")
         const gagalAct = allPending.filter(r => r.ket === "GAGAL")
@@ -70,28 +122,49 @@ export const prosesRekon = async (logger,client,query) => {
 
         logger.info(`Total Pending proses: ${allPendingAct.length} Data`)
 
-        const dataPending = allPendingAct.slice(0,config.proses)
-        logger.info(`Proses Get Data Toko: ${dataPending.length} Data`)
-        const getPrepareData = dataPending.map(r => prepareData(logger,client,r));
-        const dataCache = await Promise.allSettled(getPrepareData);
+        const dataPending = allPendingAct
+        logger.info(`Proses Get Data Toko: ${dataPending.length} Data`) 
 
-        let dataResult = dataCache.filter(r => r.status === 'fulfilled').map(r => r.value);
-        const dataResultGagal = dataResult.filter(r => r.status != 'Sukses')
-            dataResult = dataResult.filter(r => r.status === 'Sukses')
+        for (let i = 0; i < dataPending.length; i += 1000) {
+            logger.info(`[collect] run ${i}-${Math.min(i + 1000, dataPending.length)}`);
+            let allPromise = [];
         
-        //Return jika tidak ada data prepare yg sukses
-        if (dataResult.length > 0) {
-            const queryUpdate = dataResult.map(r=> `'${r.kdtk}'`);
-            await updatePending(query,queryUpdate)
-        }
-        
-        if(dataResultGagal.length > 0){
-            const queryUpdateGagal = dataResultGagal.map(r=> `'${r.kdtk}'`);
-            await updateGagal(query,queryUpdateGagal)
-        }
+            for (let j = i; j < Math.min(i + 1000, dataPending.length); j++) {
+                const promise = new Promise((res, rej) => {
+                    prepareData(dataPending[j])
+                        .then((val) => { res(val) })
+                        .catch((e) => { rej(e) });
+                });
 
-        logger.info(`___ Total Sukses Get Data Toko: ${dataResult.length}`)
-        logger.info(`___ Total Gagal Get Data Toko: ${dataResultGagal.length}`)
+                allPromise.push(promise);
+            } 
+
+            const dataCache = await Promise.allSettled(allPromise);
+
+            let dataResult = dataCache.filter(r => r.status === 'fulfilled').map(r => r.value);
+                dataResult = dataResult.filter(r => r.status === 'Sukses')
+            
+            const dataPayload = dataResult.map(r=> r.data);
+
+            if(dataPayload.length == 0) throw new Error("tidak ada pending list")
+
+            if(dataPayload.length >= 400){
+                let allPromise = [
+                    readRespSql(client, dataLogin.data, dataPayload.slice(0,250)),
+                    readRespSql(client, dataLogin.data, dataPayload.slice(250,500)),
+                    readRespSql(client, dataLogin.data, dataPayload.slice(500,750)),
+                    readRespSql(client, dataLogin.data, dataPayload.slice(750,1000)), 
+                ];
+                await Promise.allSettled(allPromise);
+            }else{
+                await readRespSql(client, dataLogin.data, dataPayload)
+            } 
+
+            await prosesInsertCabang(logger,client,query);
+
+            logger.info(`[collect] Total Task: Looping request ${i}-${Math.min(i + 1000, dataPending.length)}`);
+
+        } 
         logger.info(`Proses Get Data Selesai`)
         return 
 

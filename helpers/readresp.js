@@ -1,48 +1,67 @@
 import axios from "axios";
 import dayjs from "dayjs";
 
-export const readRespSql =  async(jenis,kdcab,toko,query,timeout) => {
-  try {
-        const payload = [{
-            kdcab:kdcab,
-            toko: toko,
-            id: dayjs().format("YYYYMMDDHHmmss"),
-            task: "SQL",
-            idtask : "3",
-            taskdesc: jenis,
-            timeout: 60,
-            isinduk: true,
-            station: "01",
-            command: query
-        }] 
-        let resp = await axios.post("http://172.24.52.10:2905/CekStore",payload, {timeout : parseInt(timeout)});
-          
-        if(resp.data.code != 200 ){ 
+export const readRespSql =  async(client, token, payload) => {
+    try {
+    
+        let respTask = await axios.post("http://172.24.52.10:7321/ReportFromListener/v1/CekStore", payload, {
+            headers: {
+                "Token": `${token}`
+            },
+            timeout: 200000
+        });
+        
+        if(respTask.data.code != 200 ){ 
             throw new Error("Response Code Api != 200");
         }
-        let dataRes = JSON.parse(resp.data.data)
-        if(dataRes[0].msg.substring(0,6) !='succes'){
-            throw new Error(dataRes[0].msg);
-        }
+    
+        let readResponse = JSON.parse(respTask.data.data)
         
-        let dataReponse = JSON.parse(dataRes[0].data)
-        dataReponse= JSON.parse(dataReponse[0])
-        
-        if (dataReponse.hasOwnProperty('error') || dataReponse[0].hasOwnProperty('pesan')){
-            throw new Error("Data Error atau Pesan");
-        } 
-        
-        return dataReponse
+        readResponse = readResponse.filter(r => r.data != '')
 
-   } catch(err) {  
-        
-        return {
-            code : 400,
-            message : "Gagal Akses Toko"
+        for(let i of readResponse){
+            if(i.msg == 'Succes SQL Native'){
+                let u = JSON.parse(i.data)
+                const dataCache = {
+                    kdcab: i.kdcab,
+                    kdtk: i.toko,
+                    host: u[0].ip_server,
+                    user: u[0].user,
+                    pass: u[0].pass,
+                    db: u[0].db,
+                    port: u[0].port,
+                    data: u
+                }
+                await client.set(`rekonsales-insert-${i.toko}`,JSON.stringify(dataCache),{EX: 60 * 15})
+            }else{
+                let u = JSON.parse(i.data)
+                const dataCache = {
+                    kdcab: i.kdcab,
+                    kdtk: i.toko,
+                    host: u[0].ip_server,
+                    user: u[0].user,
+                    pass: u[0].pass,
+                    db: u[0].db,
+                    port: u[0].port,
+                    data: u
+                }
+                await client.set(`rekonsales-insert-${i.toko}`,JSON.stringify(dataCache),{EX: 60 * 15})
+            }
         }
-  } 
-  
-}
+
+        return {
+            code : 200,
+            message : "Sukses"
+        }
+          
+     } catch(err) {   
+          return {
+              code : 400,
+              message : "Gagal Akses API",
+          }
+    } 
+    
+  }
 
 export const readRespNative =  async(jenis,toko,queryEx,timeout) => {
     try { 
@@ -74,3 +93,35 @@ export const readRespNative =  async(jenis,toko,queryEx,timeout) => {
     }
 }
         
+
+export const LoginESS =  async() => {
+    try {
+          const payload = {
+            "username": "2012073403",
+            "password" : "N3wbi330m3D@2406"
+          }
+          let resp = await axios.post("http://172.24.52.30:7321/login",payload, {timeout : parseInt(20000)});
+          
+          if(resp.data.code != 200 ){ 
+              throw new Error("Response Code Api != 200");
+          }
+  
+          let dataRes = JSON.parse(resp.data.data)
+          
+          
+          return {
+              code : 200,
+              status : "Sukses",
+              data: dataRes.token
+          }
+     } catch(err) {  
+          
+          return {
+              code : 400,
+              status : "Gagal",
+              data: "Error - Response Api",
+              err: err
+          }
+    } 
+    
+  }

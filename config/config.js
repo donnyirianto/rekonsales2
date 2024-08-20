@@ -13,7 +13,7 @@ const envVarsSchema = Joi.object()
     REDIS_HOST: Joi.string().required().description('REDIS HOST'),
     REDIS_PASS: Joi.string().required().description('REDIS PASS'),
     REDIS_PORT: Joi.number().required().description('REDIS PORT'),
-    PROSES: Joi.number().default(50),
+    PROSES: Joi.number().default(300),
   })
   .unknown();
 

@@ -6,7 +6,7 @@ export const getListIpToko = async (query) => {
        c.api_server,a.ket
        from m_rekonsales_jadwal a 
        LEFT JOIN  m_server_iris c on a.kdcab = c.kdcab and c.jenis = 'IRIS'
-       where ket in('BELUM','GAGAL')
+       where ket in('BELUM','GAGAL','')
        AND date(a.addtime) = curdate();`
 
        const rows = await query(sqlQuery)
