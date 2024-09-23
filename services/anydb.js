@@ -21,7 +21,7 @@ export const queryAnyDb = async (host,user,password,database,port, queryx) => {
       return "Sukses"
     
   } catch (error) {
-    
+    console.log(error)
     return "Error"
   }
 }

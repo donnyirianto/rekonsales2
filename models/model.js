@@ -8,7 +8,7 @@ export const getListIpToko = async (query) => {
        from m_rekonsales_jadwal a 
        LEFT JOIN  m_server_iris c on a.kdcab = c.kdcab and c.jenis = 'IRIS'
        where ket in('BELUM','GAGAL','')
-       AND a.addtime >= now() - INTERVAL 4 HOUR;`
+       AND a.addtime >= now() - INTERVAL 23 day;`
 
        const rows = await query(sqlQuery)
  

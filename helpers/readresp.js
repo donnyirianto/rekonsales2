@@ -8,7 +8,7 @@ export const readRespSql =  async(client, token, payload) => {
             headers: {
                 "Token": `${token}`
             },
-            timeout: 200000
+            timeout: 100000
         });
         
         if(respTask.data.code != 200 ){ 
@@ -32,6 +32,7 @@ export const readRespSql =  async(client, token, payload) => {
                     port: u[0].port,
                     data: u
                 }
+                
                 await client.set(`rekonsales-insert-${i.toko}`,JSON.stringify(dataCache),{EX: 60 * 15})
             }else{
                 let u = JSON.parse(i.data)
@@ -43,7 +44,7 @@ export const readRespSql =  async(client, token, payload) => {
                     pass: u[0].pass,
                     db: u[0].db,
                     port: u[0].port,
-                    data: u
+                    data: JSON. parse(u[0])
                 }
                 await client.set(`rekonsales-insert-${i.toko}`,JSON.stringify(dataCache),{EX: 60 * 15})
             }

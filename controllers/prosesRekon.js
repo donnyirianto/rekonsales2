@@ -6,7 +6,7 @@ import { prosesInsertCabang } from './prosesInsertCabang.js';
 const requestTask = async (token,dataPayload)=>{
     try {
         
-        const respTask = await instance.post("http://172.24.52.14:7321/ReportFromListener/v1/CekStore", dataPayload, {
+        const respTask = await instance.post("http://172.24.52.30:7321/ReportFromListener/v1/CekStore", dataPayload, {
             headers: {
                 "Token": `${token}`
             },

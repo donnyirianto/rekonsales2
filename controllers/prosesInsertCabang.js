@@ -10,7 +10,10 @@ const prepareData = async (client,r) => {
     
     try { 
 
-        if(dataCache.data[0].nama_toko == undefined) throw new Error("Gagal")
+        if(dataCache.data[0].nama_toko == undefined) {
+            console.log(dataCache)
+            throw new Error("Gagal")
+        }
 
         const insert = dataCache.data.map((r)=> `('${r.kdcab}','${r.toko}','${r.nama_toko.substring(0,20)}','${r.SHOP}','${r.WDATE}','${r.TJUALN}','${r.TRETN}','${r.TPPN}','${r.THPP}','${r.TJUAL}','${r.TRET}','${r.JQTY}','${r.DQTY}','${r.BBS_PPN}')`)
         
@@ -32,7 +35,7 @@ const prepareData = async (client,r) => {
             kdtk: dataCache.kdtk,
         };
     } catch (error) {
-        
+        console.log(error)
         return { status: "Gagal",
             kdtk: dataCache.kdtk, };
     }
